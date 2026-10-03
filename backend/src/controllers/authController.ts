@@ -107,24 +107,27 @@ export const googleCallback = (
   next: NextFunction
 ): void => {
   passport.authenticate('google', { session: false }, (err: Error, user: IUser) => {
+    const clientUrl = (process.env.CLIENT_URL || 'http://localhost:5173').replace(/\/+$/, '');
+
     if (err || !user) {
       console.error('[Auth] Google callback error:', err);
       return res.redirect(
-        `${process.env.CLIENT_URL || 'http://localhost:5173'}/login?error=auth_failed`
+        `${clientUrl}/login?error=auth_failed`
       );
     }
 
     const result = authService.generateOAuthToken(user);
+    const isProduction = process.env.NODE_ENV === 'production';
 
     res.cookie('token', result.token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     res.redirect(
-      `${process.env.CLIENT_URL || 'http://localhost:5173'}/auth/callback?token=${result.token}`
+      `${clientUrl}/auth/callback?token=${result.token}`
     );
   })(req, res, next);
 };

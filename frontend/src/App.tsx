@@ -35,9 +35,14 @@ const AuthCallback: React.FC = () => {
 
   useEffect(() => {
     const token = searchParams.get('token');
+    const error = searchParams.get('error');
     if (token) {
       setToken(token);
       window.location.href = '/dashboard';
+    } else if (error) {
+      window.location.href = `/login?error=${encodeURIComponent(error)}`;
+    } else {
+      window.location.href = '/login';
     }
   }, [searchParams, setToken]);
 

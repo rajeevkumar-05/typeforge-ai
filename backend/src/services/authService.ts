@@ -91,7 +91,8 @@ export const forgotPassword = async (email: string): Promise<void> => {
   user.resetPasswordExpires = new Date(Date.now() + 3600000); // 1 hour
   await user.save();
 
-  const resetUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password/${resetToken}`;
+  const clientUrl = (process.env.CLIENT_URL || 'http://localhost:5173').replace(/\/+$/, '');
+  const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
   await sendEmail({
     to: user.email,
     subject: 'TypeForge AI - Password Reset',

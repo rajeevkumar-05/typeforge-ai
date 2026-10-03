@@ -1,7 +1,9 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import dotenv from 'dotenv';
 import passport from 'passport';
 
 import connectDB from './config/db';
@@ -13,10 +15,11 @@ import testRoutes from './routes/testRoutes';
 import userRoutes from './routes/userRoutes';
 import leaderboardRoutes from './routes/leaderboardRoutes';
 
-dotenv.config();
-
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Trust reverse proxy (Render, Heroku, etc.)
+app.set('trust proxy', 1);
 
 // Middleware
 app.use(cors({
@@ -24,10 +27,16 @@ app.use(cors({
     // Allow requests with no origin (server-to-server, Postman, etc.)
     if (!origin) return callback(null, true);
 
-    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
-    // Accept the configured CLIENT_URL and any localhost/127.0.0.1 origin in development
+    const rawClientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    const allowedOrigins = rawClientUrl
+      .split(',')
+      .map((url) => url.trim().replace(/\/+$/, ''))
+      .filter(Boolean);
+
+    const normalizedOrigin = origin.replace(/\/+$/, '');
+    // Accept configured CLIENT_URL and any localhost/127.0.0.1 origin in development
     if (
-      origin === clientUrl ||
+      allowedOrigins.includes(normalizedOrigin) ||
       /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
     ) {
       return callback(null, true);
