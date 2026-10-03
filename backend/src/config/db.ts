@@ -14,7 +14,7 @@ const connectDB = async (): Promise<void> => {
     process.exit(1);
   }
 
-  mongoose.connection.on('error', (err) => {
+  mongoose.connection.on('error', (err: Error) => {
     console.error('MongoDB runtime error:', err);
   });
 
