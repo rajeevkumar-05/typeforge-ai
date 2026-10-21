@@ -82,6 +82,12 @@ Completed locally:
 
 After Vercel deploys, verify `/typing`, themes, test presets, Google sign-in, a signed-in saved result, dashboard and leaderboard. Authenticated result saving and live deployment have not been verified in this local update. Real-device mobile keyboard behavior also needs a device check.
 
+## Login-page refresh
+
+The login view now uses a dedicated, responsive stylesheet with consistent label/input alignment, a TypeForge brand header, centered primary action, and subtle hover/focus feedback. Interactive additions include password visibility, inline email/password validation with focus on the first invalid field, Caps Lock feedback, pending-request feedback, duplicate-submit prevention, and readable sign-in failure messages. The optional Remember email checkbox saves only the email address locally after a successful email/password sign-in; it does not change session lifetime or store a password.
+
+The Google OAuth link and existing authentication service remain in use. Registration and password-reset routes remain available. Local checks covered the production build, empty-field validation, valid-email feedback, password visibility, keyboard navigation and a narrow browser layout. Successful authentication was not tested with real credentials as part of this visual update.
+
 ## Performance work
 
 See [the scalability review and testing guide](../performance/README.md) and [the k6 script](../performance/typeforge-load-test.js). No load test has been sent to the live service. Use a staging service and disposable test data for result-saving tests.
