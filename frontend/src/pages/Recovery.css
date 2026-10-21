@@ -1,0 +1,26 @@
+.recovery-shell { max-width: 460px; }
+.recovery-icon { display: grid; place-items: center; width: 48px; height: 48px; margin: 0 auto 20px; color: var(--login-accent); border: 1px solid #a88bef35; border-radius: 15px; background: #a88bef0c; }
+.recovery-icon svg { width: 23px; height: 23px; }
+.recovery-card .login-heading h1 { font-size: 27px; letter-spacing: -.8px; }
+.recovery-card .login-heading p { max-width: 330px; margin-inline: auto; line-height: 1.7; }
+.recovery-card .login-submit { text-decoration: none; }
+.recovery-card .login-submit:hover { color: white; }
+.recovery-form { gap: 20px; }
+.recovery-message { color: var(--login-muted); font-size: 13px; line-height: 1.8; text-align: center; margin-bottom: 24px; }
+.recovery-email { display: block; margin: 6px 0; color: var(--login-text); overflow-wrap: anywhere; font-weight: 500; }
+.recovery-hint { color: var(--login-muted); font-size: 11px; line-height: 1.7; margin-top: 8px; }
+.recovery-google { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--login-border); text-align: center; font-size: 11px; color: var(--login-muted); line-height: 1.7; }
+.recovery-google a { display: inline-flex; gap: 6px; align-items: center; color: var(--login-accent); margin-top: 6px; text-decoration: none; font-size: 12px; font-weight: 500; }
+.recovery-google a:hover { text-decoration: underline; text-underline-offset: 4px; }
+.recovery-google svg { width: 14px; height: 14px; }
+.recovery-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 20px; margin-top: 18px; }
+.recovery-links a, .recovery-links button { background: none; padding: 4px 0; border: 0; color: var(--login-accent); font: 500 12px/1.5 var(--font-sans); text-decoration: none; cursor: pointer; }
+.recovery-links :is(a,button):hover { text-decoration: underline; text-underline-offset: 4px; }
+.recovery-status { font-size: 11px; text-align: center; color: var(--login-muted); margin-top: 12px; }
+.recovery-card .login-alert { margin-bottom: 18px; }
+.recovery-checks { display: grid; gap: 4px; list-style: none; padding: 0; margin: 8px 0 0; font-size: 11px; color: var(--login-muted); }
+.recovery-checks li { display: flex; gap: 6px; align-items: center; }
+.recovery-checks svg { width: 12px; height: 12px; }
+.recovery-checks .is-met { color: #80c7ac; }
+[data-theme="light"] .recovery-checks .is-met { color: #207453; }
+@media (max-width: 540px) { .recovery-card .login-heading h1 { font-size: 25px; } }

@@ -11,7 +11,7 @@
 - Fixed live-WPM startup spikes and stale values while idle. Escape restarts; Tab navigates controls.
 - Improved results spacing and theme readability.
 
-Backend application code and account-security mechanisms have not changed. The earlier scalability findings are recommendations, not implemented backend fixes.
+The original typing-page update was frontend-only. The later password-recovery update includes backend changes and requires a Render deployment plus email-provider configuration; see [password-reset setup](password-reset.md). The earlier scalability findings remain recommendations, not implemented backend fixes.
 
 ## Vercel
 
@@ -30,7 +30,7 @@ The API URL must include `/api`. It is a public frontend configuration value, no
 
 ## Render
 
-There are no backend source changes requiring redeployment for this UI update. If your service auto-deploys every main-branch commit, inspect its status. If you choose to deploy manually, use the existing service and the latest main-branch commit.
+The password-recovery fixes require the latest backend source to be deployed and an email provider to be configured. If your service auto-deploys main-branch commits, inspect its status; otherwise deploy the latest commit manually. Follow [password-reset setup](password-reset.md) for the private mail configuration.
 
 Existing backend configuration should remain:
 

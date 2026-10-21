@@ -76,7 +76,7 @@ export const forgotPassword = async (
 ): Promise<void> => {
   try {
     await authService.forgotPassword(req.body.email);
-    res.json({ message: 'If an account exists with that email, a reset link has been sent.' });
+    res.json({ message: 'If this address has an email/password account, check its inbox for a reset link.' });
   } catch (error) {
     next(error);
   }

@@ -6,7 +6,8 @@ import { Footer } from './Footer';
 
 export const Layout: React.FC = () => {
   const location = useLocation();
-  const isAuthPage = ['/login', '/register'].includes(location.pathname);
+  const isAuthPage = ['/login', '/register', '/forgot-password'].includes(location.pathname)
+    || location.pathname.startsWith('/reset-password/');
 
   return (
     <div className="w-full min-h-screen flex flex-col bg-[var(--bg-primary)]">

@@ -1,7 +1,8 @@
+import bcrypt from 'bcryptjs';
 import User, { IUser } from '../models/User';
 import { signToken } from '../utils/jwt';
 import { generateResetToken, hashResetToken } from '../utils/helpers';
-import { sendEmail, getPasswordResetEmail } from '../utils/email';
+import { sendEmail, getPasswordResetEmail, assertEmailConfigured } from '../utils/email';
 
 interface AuthResult {
   user: Partial<IUser>;
@@ -79,46 +80,65 @@ export const loginUser = async (
   };
 };
 
+const invalidReset = () => Object.assign(new Error('This reset link is invalid, expired, or already used.'), { statusCode: 400 });
+
 export const forgotPassword = async (email: string): Promise<void> => {
-  const user = await User.findOne({ email });
-  if (!user) {
-    // Don't reveal if email exists
-    return;
+  // Configuration failures apply to every email address, before account lookup.
+  assertEmailConfigured();
+  const configuredUrl = (process.env.CLIENT_URL || (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5173')).split(',')[0].trim();
+  let frontend: URL;
+  try {
+    frontend = new URL(configuredUrl);
+    if (!['http:', 'https:'].includes(frontend.protocol)) throw new Error('Invalid origin');
+    if (process.env.NODE_ENV === 'production' && frontend.protocol !== 'https:') throw new Error('HTTPS frontend required');
+  } catch {
+    throw Object.assign(new Error('Password recovery is temporarily unavailable.'), { statusCode: 503 });
   }
+
+  const user = await User.findOne({ email: email.trim().toLowerCase(), provider: 'local' });
+  // Google-only and unknown accounts receive the same generic response.
+  if (!user) return;
+  // Server-side per-account cooldown; the client countdown is only a convenience.
+  if (user.resetPasswordExpires && user.resetPasswordExpires.getTime() > Date.now() + 3540000) return;
 
   const resetToken = generateResetToken();
-  user.resetPasswordToken = hashResetToken(resetToken);
-  user.resetPasswordExpires = new Date(Date.now() + 3600000); // 1 hour
+  const tokenHash = hashResetToken(resetToken);
+  user.resetPasswordToken = tokenHash;
+  user.resetPasswordExpires = new Date(Date.now() + 3600000);
   await user.save();
 
-  const clientUrl = (process.env.CLIENT_URL || 'http://localhost:5173').replace(/\/+$/, '');
-  const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
-  await sendEmail({
-    to: user.email,
-    subject: 'TypeForge AI - Password Reset',
-    html: getPasswordResetEmail(resetUrl),
-  });
+  const resetUrl = new URL(`/reset-password/${resetToken}`, frontend.origin).toString();
+  try {
+    await sendEmail({
+      to: user.email, subject: 'Reset your TypeForge password',
+      html: getPasswordResetEmail(resetUrl),
+      text: `Reset your TypeForge password: ${resetUrl}\nThis link works once and expires in one hour. Ignore this message if you did not request it.`,
+    });
+  } catch (error) {
+    // Conditional cleanup must not invalidate a newer request made concurrently.
+    await User.updateOne({ _id: user._id, resetPasswordToken: tokenHash }, {
+      $unset: { resetPasswordToken: 1, resetPasswordExpires: 1 },
+    });
+    throw error;
+  }
 };
 
-export const resetPassword = async (
-  token: string,
-  newPassword: string
-): Promise<void> => {
-  const hashedToken = hashResetToken(token);
-
-  const user = await User.findOne({
-    resetPasswordToken: hashedToken,
-    resetPasswordExpires: { $gt: new Date() },
-  });
-
-  if (!user) {
-    throw Object.assign(new Error('Invalid or expired reset token'), { statusCode: 400 });
+export const resetPassword = async (token: string, newPassword: string): Promise<void> => {
+  if (!/^[a-f0-9]{64}$/i.test(token)) throw invalidReset();
+  if (Array.from(newPassword).length < 6 || Buffer.byteLength(newPassword, 'utf8') > 72) {
+    throw Object.assign(new Error('Use at least 6 characters and no more than 72 bytes.'), { statusCode: 400 });
   }
-
-  user.passwordHash = newPassword;
-  user.resetPasswordToken = undefined;
-  user.resetPasswordExpires = undefined;
-  await user.save();
+  // Query + update atomically consumes the token, so concurrent submissions cannot reuse it.
+  // findOneAndUpdate does not run the model's pre-save hook, so hash explicitly here.
+  const passwordHash = await bcrypt.hash(newPassword, 12);
+  const user = await User.findOneAndUpdate({
+    resetPasswordToken: hashResetToken(token),
+    resetPasswordExpires: { $gt: new Date() }, provider: 'local',
+  }, {
+    $set: { passwordHash },
+    $unset: { resetPasswordToken: 1, resetPasswordExpires: 1 },
+  });
+  if (!user) throw invalidReset();
 };
 
 export const generateOAuthToken = (user: IUser): AuthResult => {

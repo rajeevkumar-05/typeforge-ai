@@ -35,9 +35,13 @@ export const forgotPasswordValidator = [
 
 export const resetPasswordValidator = [
   body('token')
-    .notEmpty()
-    .withMessage('Reset token is required'),
+    .isString().bail()
+    .matches(/^[a-f0-9]{64}$/i)
+    .withMessage('Invalid reset link'),
   body('password')
-    .isLength({ min: 6 })
-    .withMessage('Password must be at least 6 characters'),
+    .isString().bail()
+    .custom((value: string) => Array.from(value).length >= 6)
+    .withMessage('Password must be at least 6 characters')
+    .custom((value: string) => Buffer.byteLength(value, 'utf8') <= 72)
+    .withMessage('Password must not exceed 72 bytes'),
 ];

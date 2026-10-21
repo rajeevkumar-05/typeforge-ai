@@ -22,12 +22,12 @@ export const authService = {
   },
 
   forgotPassword: async (email: string): Promise<{ message: string }> => {
-    const { data } = await api.post('/auth/forgot-password', { email });
+    const { data } = await api.post('/auth/forgot-password', { email }, { timeout: 75000 });
     return data;
   },
 
   resetPassword: async (token: string, password: string): Promise<{ message: string }> => {
-    const { data } = await api.post('/auth/reset-password', { token, password });
+    const { data } = await api.post('/auth/reset-password', { token, password }, { timeout: 75000 });
     return data;
   },
 
