@@ -139,6 +139,15 @@
 
 @keyframes login-caret { 0%, 45% { opacity: 1; } 46%, 100% { opacity: 0; } }
 @keyframes login-spin { to { transform: rotate(360deg); } }
+@media (min-width: 541px) and (max-height: 800px) {
+  .login-screen { padding-block: 20px; }
+  .login-brand-block { margin-bottom: 20px; }
+  .login-card { padding-block: 24px; }
+  .login-heading { margin-bottom: 22px; }
+  .login-divider { margin-block: 18px; }
+  .login-form { gap: 14px; }
+  .login-footer { margin-top: 18px; }
+}
 @media (max-width: 540px) {
   .login-screen { padding: 70px 20px 28px; }
   .login-back { top: 22px; left: 22px; }
