@@ -7,11 +7,11 @@ import { useSettingsStore } from '../store/settingsStore';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { userService } from '../services/userService';
-import { ACCENT_COLORS, THEMES } from '../lib/constants';
+import { THEMES } from '../lib/constants';
 import { cn } from '../lib/utils';
 
 const Settings: React.FC = () => {
-  const { theme, setTheme, accentColor, setAccentColor } = useThemeStore();
+  const { theme, setTheme, accentColor } = useThemeStore();
   const { soundEnabled, setSoundEnabled, smoothCaret, setSmoothCaret, fontSize, setFontSize } = useSettingsStore();
   const { isAuthenticated, updatePreferences } = useAuth();
   const toast = useToast();
@@ -66,27 +66,6 @@ const Settings: React.FC = () => {
                 <span className="text-2xl block mb-2">{t.icon}</span>
                 <span className="text-sm font-medium text-text-primary">{t.label}</span>
               </button>
-            ))}
-          </div>
-        </Card>
-
-        {/* Accent Color */}
-        <Card>
-          <h2 className="text-sm font-medium text-text-muted uppercase tracking-wider mb-4">Accent Color</h2>
-          <div className="flex flex-wrap gap-3">
-            {ACCENT_COLORS.map((color) => (
-              <button
-                key={color.value}
-                onClick={() => setAccentColor(color.value)}
-                className={cn(
-                  'w-10 h-10 rounded-xl transition-all duration-200 cursor-pointer',
-                  accentColor === color.value
-                    ? 'ring-2 ring-offset-2 ring-offset-[var(--bg-secondary)] scale-110'
-                    : 'hover:scale-105'
-                )}
-                style={{ backgroundColor: color.value }}
-                title={color.name}
-              />
             ))}
           </div>
         </Card>

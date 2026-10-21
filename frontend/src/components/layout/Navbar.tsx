@@ -16,7 +16,7 @@ export const Navbar: React.FC = () => {
   const [open, setOpen] = useState(false);
   const signOut = async () => { await logout(); navigate('/'); };
 
-  return <header className="tf-nav">
+  return <header className={`tf-nav${pathname === '/typing' ? ' practice-nav' : ''}`}>
     <div className="tf-nav-inner">
       <Link to="/" className="tf-brand" aria-label="TypeForge home"><span className="tf-mark">T</span><span>typeforge</span><b>AI</b></Link>
       <nav className="tf-nav-links" aria-label="Main navigation">

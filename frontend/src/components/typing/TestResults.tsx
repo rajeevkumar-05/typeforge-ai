@@ -85,7 +85,7 @@ export const TestResults: React.FC<TestResultsProps> = ({
       initial="hidden"
       animate="visible"
       variants={stagger}
-      className="space-y-5"
+      className="practice-results space-y-5"
     >
       {/* ── Header badge ── */}
       <motion.div variants={fadeUp} className="text-center">
@@ -99,7 +99,7 @@ export const TestResults: React.FC<TestResultsProps> = ({
       </motion.div>
 
       {/* ── Main stats ── */}
-      <motion.div variants={fadeUp} className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <motion.div variants={fadeUp} className="result-metrics grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: 'WPM',      value: wpm,                  accent: true,  big: true },
           { label: 'Accuracy', value: `${accuracy}%`,       accent: false, big: true },
@@ -126,7 +126,7 @@ export const TestResults: React.FC<TestResultsProps> = ({
       </motion.div>
 
       {/* ── Detail row ── */}
-      <motion.div variants={fadeUp} className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <motion.div variants={fadeUp} className="result-details grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: 'Correct',   value: correctChars, color: 'var(--color-success, #22C55E)' },
           { label: 'Mistakes',  value: mistakes,      color: mistakes > 0 ? 'var(--color-error, #EF4444)' : 'var(--text-secondary)' },
@@ -142,7 +142,7 @@ export const TestResults: React.FC<TestResultsProps> = ({
 
       {/* ── WPM Chart ── */}
       {chartData.length > 1 && (
-        <motion.div variants={fadeUp} className="p-6 rounded-2xl bg-[var(--bg-secondary)] border border-[var(--border-color)]">
+        <motion.div variants={fadeUp} className="result-chart p-6 rounded-2xl bg-[var(--bg-secondary)] border border-[var(--border-color)]">
           <h3 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-widest mb-5">
             WPM over time
           </h3>
@@ -199,7 +199,7 @@ export const TestResults: React.FC<TestResultsProps> = ({
       )}
 
       {/* ── Actions ── */}
-      <motion.div variants={fadeUp} className="flex items-center justify-center gap-3 flex-wrap pt-2">
+      <motion.div variants={fadeUp} className="result-actions flex items-center justify-center gap-3 flex-wrap pt-2">
         <Button onClick={onRestart} size="lg">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />

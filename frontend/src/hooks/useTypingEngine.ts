@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState, useMemo, useEffect } from 'react';
 import type { TestMode, CharStatus } from '../types/test';
 import { calculateWPM, calculateRawWPM, calculateAccuracy } from '../lib/utils';
-import { DEFAULT_WORD_COUNT, WPM_UPDATE_INTERVAL_MS } from '../lib/constants';
+import { DEFAULT_WORD_COUNT } from '../lib/constants';
 import { generateDataset } from '../lib/datasetGenerator';
 import type { TypingConfiguration } from '../store/typingStore';
 
@@ -49,13 +49,11 @@ export const useTypingEngine = (
   const [text, setText] = useState(() => generateDataset(mode, customWordCount, configuration));
   const [state, setState] = useState<TypingEngineState>(() => createInitialState(text));
   const [timeElapsed, setTimeElapsed] = useState(0);
-  const [liveWpm, setLiveWpm] = useState(0);
   const textRef = useRef(text);
 
   const startTimeRef = useRef<number>(0);
   const timerRef = useRef<number>(0);
   const wpmIntervalRef = useRef<number>(0);
-  const lastWpmUpdateRef = useRef<number>(0);
   const isTimedMode = mode.startsWith('time-');
   const targetDuration = isTimedMode ? duration : 0;
 
@@ -108,9 +106,7 @@ export const useTypingEngine = (
     setText(newText);
     setState(createInitialState(newText));
     setTimeElapsed(0);
-    setLiveWpm(0);
     startTimeRef.current = 0;
-    lastWpmUpdateRef.current = 0;
   }, [mode, customWordCount, configuration, stopTimer]);
 
   const endSession = useCallback(() => {
@@ -129,12 +125,8 @@ export const useTypingEngine = (
       // Allow Ctrl+Backspace
       if (!(e.ctrlKey && e.key === 'Backspace')) return;
     }
-    if (e.key === 'Tab' || e.key === 'Escape') {
-      e.preventDefault();
-      restart();
-      return;
-    }
-    if (e.key === 'Shift' || e.key === 'CapsLock' || e.key === 'Control' || e.key === 'Alt' || e.key === 'Meta') return;
+    // Preserve native keyboard navigation; only typing and deletion change a test.
+    if (e.key.length !== 1 && e.key !== 'Backspace') return;
 
     e.preventDefault();
 
@@ -259,19 +251,9 @@ export const useTypingEngine = (
         setText(textRef.current);
       }
 
-      // Throttle live WPM updates
-      const now = performance.now();
-      if (now - lastWpmUpdateRef.current > WPM_UPDATE_INTERVAL_MS) {
-        lastWpmUpdateRef.current = now;
-        const elapsed = startTimeRef.current > 0 ? (now - startTimeRef.current) / 1000 : 0;
-        if (elapsed > 0) {
-          setLiveWpm(calculateWPM(newState.correctChars, elapsed));
-        }
-      }
-
       return newState;
     });
-  }, [isTimedMode, mode, startTimer, stopTimer, restart, configuration]);
+  }, [isTimedMode, mode, startTimer, stopTimer, configuration]);
 
   // Derived values
   const elapsed = timeElapsed;
@@ -306,7 +288,7 @@ export const useTypingEngine = (
     finished: state.finished,
     timeElapsed: elapsed,
     timeRemaining,
-    liveWpm,
+    liveWpm: elapsed >= 1 ? netWpm : 0,
     rawWpm,
     netWpm,
     accuracy,

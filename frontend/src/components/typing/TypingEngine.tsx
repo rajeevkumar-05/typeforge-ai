@@ -1,223 +1,86 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { Globe2, RotateCcw, Square } from 'lucide-react';
 import { useTypingEngine } from '../../hooks/useTypingEngine';
 import { useTypingStore } from '../../store/typingStore';
+import { useThemeStore } from '../../store/themeStore';
+import { THEMES } from '../../lib/constants';
 import { TypingDisplay } from './TypingDisplay';
 import { LiveStats } from './LiveStats';
-import { ProgressBar } from './ProgressBar';
 import { ModeSelector } from './ModeSelector';
 import { TestResults } from './TestResults';
 
 export const TypingEngine: React.FC = () => {
-  const { mode, duration, customWordCount, punctuation, numbers, difficulty, language, font, keyboardLayout, customText } = useTypingStore();
+  const { mode, duration, customWordCount, punctuation, numbers, language, customText } = useTypingStore();
+  const { theme, setTheme } = useThemeStore();
   const inputRef = useRef<HTMLInputElement>(null);
   const [isFocused, setIsFocused] = useState(false);
-  const [utilityOpen, setUtilityOpen] = useState(false);
-  const configuration = useMemo(() => ({ punctuation, numbers, difficulty, language, font, keyboardLayout, customText }), [punctuation, numbers, difficulty, language, font, keyboardLayout, customText]);
+  const configuration = useMemo(() => ({ punctuation, numbers, language, customText }), [punctuation, numbers, language, customText]);
   const engine = useTypingEngine(mode, duration, customWordCount, configuration);
 
-  const focusInput = () => {
-    inputRef.current?.focus();
-    setIsFocused(true);
-  };
-
+  const focusInput = () => inputRef.current?.focus({ preventScroll: true });
   const handleRestart = () => {
     engine.restart();
-    setTimeout(focusInput, 30);
+    // Results unmount the input; focus after the practice view is restored.
+    requestAnimationFrame(focusInput);
   };
 
-  // Auto focus input on mount, mode change, or restart
-  useEffect(() => {
-    const timer = setTimeout(focusInput, 50);
-    return () => clearTimeout(timer);
-  }, [mode, punctuation, numbers, difficulty, language, customText]);
-
-  // Handle global keyboard shortcuts (Tab / Esc for instant restart)
-  useEffect(() => {
-    const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      // Don't intercept if user is typing in form inputs (like mode values or custom text)
-      const activeEl = document.activeElement;
-      if (activeEl && activeEl.tagName === 'INPUT' && activeEl !== inputRef.current) {
-        return;
-      }
-      if (activeEl && (activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT')) {
-        return;
-      }
-
-      if (e.key === 'Tab' || e.key === 'Escape') {
-        e.preventDefault();
-        handleRestart();
-      }
-    };
-
-    window.addEventListener('keydown', handleGlobalKeyDown);
-    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [engine]);
-
-  useEffect(() => {
-    document.documentElement.style.setProperty('--typing-font', `'${font}', ui-monospace, monospace`);
-  }, [font]);
+  useEffect(() => { focusInput(); }, []);
 
   return (
-    <div className="typing-shell" onClick={focusInput}>
-      <div className="typing-topline">
-        <span className="typing-crumb">
-          <b>PRACTICE</b> / {mode.startsWith('time') ? 'TIMED SESSION' : 'FOCUSED SESSION'}
-        </span>
-        <button
-          className="utility-trigger"
-          onClick={(e) => {
-            e.stopPropagation();
-            setUtilityOpen((open) => !open);
-          }}
-          aria-expanded={utilityOpen}
-          aria-controls="typing-utilities"
-        >
-          {utilityOpen ? 'Hide utilities' : 'Session utilities'} <span>⌘ /</span>
-        </button>
-      </div>
-
-      <div className="typing-toolbar" aria-label="Typing test settings" onClick={(e) => e.stopPropagation()}>
-        <ModeSelector onRestart={handleRestart} />
-      </div>
-
-      <AnimatePresence>
-        {utilityOpen && (
-          <motion.aside
-            id="typing-utilities"
-            className="utility-panel"
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div>
-              <small>SESSION STATUS</small>
-              <strong>{engine.finished ? 'Ended' : engine.started ? 'In progress' : 'Ready'}</strong>
-              <i className="utility-progress">
-                <b style={{ width: `${Math.min(engine.progress, 100)}%` }} />
-              </i>
-            </div>
-            <div>
-              <small>ELAPSED TIME</small>
-              <strong>
-                {Math.floor(engine.timeElapsed / 60)}:
-                {String(Math.floor(engine.timeElapsed % 60)).padStart(2, '0')}
-              </strong>
-            </div>
-            <div>
-              <small>WORDS TYPED</small>
-              <strong>{Math.floor(engine.correctChars / 5)}</strong>
-            </div>
-            <div>
-              <small>ACCURACY</small>
-              <strong>{engine.accuracy}<em>%</em></strong>
-            </div>
-          </motion.aside>
-        )}
-      </AnimatePresence>
-
-      <div className="typing-layout">
-        <div className="typing-main">
-          <LiveStats
-            wpm={engine.liveWpm}
-            accuracy={engine.accuracy}
-            mistakes={engine.mistakes}
-            timeElapsed={engine.timeElapsed}
-            timeRemaining={engine.timeRemaining}
-            isTimedMode={mode.startsWith('time-')}
-            correctChars={engine.correctChars}
-            totalTyped={engine.totalTyped}
+    <div className={`practice-workspace${engine.started && !engine.finished ? ' is-running' : ''}`}>
+      <ModeSelector />
+      <section className={`practice-stage${engine.finished ? ' is-finished' : ''}`} aria-label="English typing practice">
+        {engine.finished ? (
+          <TestResults
+            wpm={engine.netWpm} rawWpm={engine.rawWpm} accuracy={engine.accuracy}
+            mistakes={engine.mistakes} correctChars={engine.correctChars}
+            totalTyped={engine.totalTyped} timeElapsed={engine.timeElapsed}
+            wpmHistory={engine.wpmHistory} mode={mode} onRestart={handleRestart} autoSave
           />
-          {engine.started && !engine.finished && <ProgressBar progress={engine.progress} />}
-          
-          <AnimatePresence mode="wait">
-            {engine.finished ? (
-              <motion.div
-                key="results"
-                initial={{ opacity: 0, y: 24 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -24 }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <TestResults
-                  wpm={engine.netWpm}
-                  rawWpm={engine.rawWpm}
-                  accuracy={engine.accuracy}
-                  mistakes={engine.mistakes}
-                  correctChars={engine.correctChars}
-                  totalTyped={engine.totalTyped}
-                  timeElapsed={engine.timeElapsed}
-                  wpmHistory={engine.wpmHistory}
-                  mode={mode}
-                  onRestart={handleRestart}
-                  autoSave={true}
-                />
-              </motion.div>
-            ) : (
-              <motion.div
-                key="typing"
-                onClick={focusInput}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="typing-stage cursor-text"
-              >
-                <input
-                  ref={inputRef}
-                  type="text"
-                  className="absolute opacity-0 w-0 h-0 pointer-events-none"
-                  onKeyDown={engine.handleKeyDown}
-                  onFocus={() => setIsFocused(true)}
-                  onBlur={() => setIsFocused(false)}
-                  autoComplete="off"
-                  autoCorrect="off"
-                  autoCapitalize="off"
-                  spellCheck={false}
-                  tabIndex={0}
-                  aria-label="Typing input"
-                />
-                <TypingDisplay
-                  chars={engine.chars}
-                  cursorPos={engine.cursorPos}
-                  extraCharsMap={engine.extraCharsMap}
-                  isFocused={isFocused}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </div>
-
-      {/* Permanent End Test Button while session is active */}
-      {engine.started && !engine.finished && (
-        <div className="flex items-center justify-center gap-3 mt-6">
-          <button
-            className="end-session-trigger flex items-center gap-2"
-            onClick={(e) => {
-              e.stopPropagation();
-              engine.endSession();
-            }}
-          >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="6" y="6" width="12" height="12" rx="2" />
-            </svg>
-            End Test Early
+        ) : (
+          <>
+            <div className="practice-language"><Globe2 aria-hidden="true" /> english</div>
+            <LiveStats wpm={engine.liveWpm} accuracy={engine.accuracy}
+              timeElapsed={engine.timeElapsed} timeRemaining={engine.timeRemaining}
+              isTimedMode={mode.startsWith('time-')} started={engine.started} />
+            <div className="typing-stage" onClick={focusInput}>
+              <input ref={inputRef} type="text" className="typing-input"
+                onKeyDown={event => {
+                  if (event.key === 'Escape') {
+                    event.preventDefault();
+                    handleRestart();
+                    return;
+                  }
+                  engine.handleKeyDown(event);
+                }}
+                onFocus={() => setIsFocused(true)} onBlur={() => setIsFocused(false)}
+                autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false}
+                aria-label="Typing input" aria-describedby="practice-shortcuts" />
+              <TypingDisplay chars={engine.chars} cursorPos={engine.cursorPos}
+                extraCharsMap={engine.extraCharsMap} isFocused={isFocused} />
+            </div>
+          </>
+        )}
+        <div className="practice-actions">
+          <button className="practice-restart" onClick={handleRestart} aria-label="Restart typing test" title="Restart (Escape)">
+            <RotateCcw aria-hidden="true" />
           </button>
-          <button
-            className="end-session-trigger flex items-center gap-2 opacity-70 hover:opacity-100"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleRestart();
-            }}
-          >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.92-10.27l5.58 5.7" />
-            </svg>
-            Restart (Tab)
-          </button>
+          {engine.started && !engine.finished && (
+            <button className="practice-finish" onClick={engine.endSession}><Square aria-hidden="true" /> finish test</button>
+          )}
         </div>
-      )}
+      </section>
+      <footer className="practice-footer">
+        <p id="practice-shortcuts"><kbd>esc</kbd> restart test <span>·</span> <kbd>tab</kbd> move between controls</p>
+        <div className="practice-themes" role="group" aria-label="Color theme">
+          {THEMES.map(option => (
+            <button key={option.value} onClick={() => setTheme(option.value)} aria-pressed={theme === option.value}
+              aria-label={`${option.label} theme`}>
+              <span className={`theme-swatch swatch-${option.value}`} aria-hidden="true" />{option.label.toLowerCase()}
+            </button>
+          ))}
+        </div>
+      </footer>
     </div>
   );
 };

@@ -5,7 +5,7 @@ import { useThemeStore } from '../../store/themeStore';
 export const ThemeToggle: React.FC = () => {
   const { theme, setTheme } = useThemeStore();
 
-  const cycles: Array<typeof theme> = ['dark', 'light', 'highContrast'];
+  const cycles: Array<typeof theme> = ['dark', 'light', 'oled'];
   const next = () => {
     const idx = cycles.indexOf(theme);
     setTheme(cycles[(idx + 1) % cycles.length]);
@@ -17,9 +17,9 @@ export const ThemeToggle: React.FC = () => {
     : '⬛';
 
   const label =
-    theme === 'dark'         ? 'Dark mode'
-    : theme === 'light'      ? 'Light mode'
-    : 'High contrast';
+    theme === 'dark'         ? 'Blue theme'
+    : theme === 'light'      ? 'White theme'
+    : 'Black theme';
 
   return (
     <motion.button
